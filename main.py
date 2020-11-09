@@ -3,6 +3,7 @@
 from psycopg2 import extras as psycopg2_extras
 import psycopg2
 import pandas as pd
+import os
 
 # connection to postgresDB
 db_conn = psycopg2.connect(
@@ -13,9 +14,22 @@ db_conn = psycopg2.connect(
 )
 cur = db_conn.cursor(cursor_factory=psycopg2_extras.DictCursor)
 
+USER_ID = 16
+CAMPAIGN_ID = 3
+DATA_SOURCE_IDs = [38, 39, 40, 41, 19, 42, 22, 43, 44, 45, 46, 1, 2, 28, 47, 29, 48, 10, 49, 11, 50]
+
 # filename is "[user id]_[datasource_id]"
-FILENAME = "16_47.csv"
-QUERY = 'select * from data."3-16" where data_source_id=11;'
+FILENAMES = []
+
+# creating array of filenames
+for item, value in enumerate(DATA_SOURCE_IDs):
+    _dir = f'{USER_ID}_{value}.csv'
+    FILENAMES.append(_dir)
+
+
+def create_query(campaign_id, user_id, datasource_id):
+    query = f'select timestamp, value from data."{campaign_id}-{user_id}" where data_source_id = {datasource_id}'
+    return query
 
 
 # convert postgresDB to pandas table
@@ -30,15 +44,17 @@ def convert_bytea_values(dataframe, from_column, to_column, decoding):
     return dataframe
 
 
-table = create_pandas_table(QUERY)
-table = convert_bytea_values(table, 'value', 'converted_value', 'utf-8')
+for item, datasource_id in enumerate(DATA_SOURCE_IDs):
+    query = create_query(CAMPAIGN_ID, USER_ID, datasource_id)
+    table = create_pandas_table(query)
+    table = convert_bytea_values(table, 'value', 'converted_value', 'utf-8')
 
-# creating new dataframe with only required columns
-new_table = pd.DataFrame(table, columns=['timestamp', 'converted_value'])
-print(new_table)
+    # creating new dataframe with only required columns
+    new_table = pd.DataFrame(table, columns=['timestamp', 'converted_value'])
+    print(new_table)
 
-# saving new dataframe to csv file
-# new_table.to_csv('16-47.csv', index=False, header=True)
+    # saving new dataframe to csv file
+    new_table.to_csv(FILENAMES[item], index=False, header=True)
 
 cur.close()
 db_conn.close()
