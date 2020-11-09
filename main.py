@@ -14,7 +14,7 @@ db_conn = psycopg2.connect(
 )
 cur = db_conn.cursor(cursor_factory=psycopg2_extras.DictCursor)
 
-USER_ID = 16
+USER_ID = 22
 CAMPAIGN_ID = 3
 DATA_SOURCE_IDs = [38, 39, 40, 41, 19, 42, 22, 43, 44, 45, 46, 1, 2, 28, 47, 29, 48, 10, 49, 11, 50]
 
@@ -37,10 +37,12 @@ def create_pandas_table(sql_query, database=db_conn):
     table = pd.read_sql_query(sql_query, database)
     return table
 
-
+converted_values = []
 def convert_bytea_values(dataframe, from_column, to_column, decoding):
-    for key, value in dataframe[from_column].iteritems():
-        dataframe[to_column] = bytes(value).decode(decoding)
+    for item, value in dataframe[from_column].iteritems():
+        converted_values.append(bytes(value).decode(decoding))
+        print(converted_values[item])
+    dataframe[to_column] = converted_values
     return dataframe
 
 
